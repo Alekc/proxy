@@ -1,16 +1,18 @@
 package main
 
 import (
-	"github.com/alekc/proxy/tester"
 	"fmt"
+	"github.com/alekc/proxy/tester"
 )
 
 func main() {
 	test := tester.New()
-	result, err := test.Check("91.185.189.219", 8080, tester.TYPE_HTTP)
+	//tester.CheckIfPortOpen("212.237.7.129", 80, time.Second*5)
+	//result, err := test.Check("91.185.189.219", 8080, tester.TYPE_HTTP)
+	result, err := test.Check("212.237.7.129", 80, tester.TYPE_HTTP)
 	if err != nil {
-		fmt.Sprintf("Error %+v", result)
+		fmt.Println(fmt.Sprintf("Error %+v", result))
 		return
 	}
-	fmt.Sprintf("Result: %+v")
+	fmt.Printf("Result: %+v", result)
 }
