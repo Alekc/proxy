@@ -46,6 +46,11 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 		Messages: make([]string, 0),
 	}
 
+	//if cloudflare is supported set the country
+	if self.CloudFlareSupport {
+		result.Country = req.Header.Get("Cf-Ipcountry")
+	}
+
 	//getRealIpFromPost
 	realIp := self.getRealIpFromPost(req)
 	remoteIp := self.getRemoteIp(req)
@@ -117,11 +122,14 @@ func (self *Judge) normalizeXForwardedFor(req *http.Request) {
 	if self.CloudFlareSupport {
 		acceptablesForwardedIps = append(acceptablesForwardedIps)
 	}
-	for tempIp := range strings.Split(req.Header.Get("X-Forwarded-For"), ",") {
-		for accIp := range acceptablesForwardedIps {
-			if tempIp != accIp {
-				forwardedFor = append(forwardedFor)
+
+	//loop through ip and remove those which are acceptable
+	for _, tempIp := range strings.Split(req.Header.Get("X-Forwarded-For"), ",") {
+		for _, accIp := range acceptablesForwardedIps {
+			if tempIp == accIp {
+				continue
 			}
+			forwardedFor = append(forwardedFor, tempIp)
 		}
 	}
 	//if forwardedFor is empty we can safely remove that header from our search
