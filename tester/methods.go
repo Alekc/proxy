@@ -1,12 +1,14 @@
 package tester
 
 import (
+	"errors"
 	"fmt"
 	"github.com/alekc/socks"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func TestHttp(Host string, Port int) (*Result, error) {
@@ -53,7 +55,9 @@ func (self *Tester) testSocks(Host string, Port, socksType int) *Result {
 
 //execute download from given source
 func (self *Tester) downloadWithTransport(httpClient *http.Client, uri string) *Result {
-	result := new(Result)
+	result := &Result{
+		PortOpen: true,
+	}
 
 	//If we do not know our real ip then return it
 	if self.RealIp == "" {
@@ -79,17 +83,21 @@ func (self *Tester) downloadWithTransport(httpClient *http.Client, uri string) *
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	//let's try to fetch data
+	start := time.Now()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		result.Err = err
 		return result
 	}
+	result.ExecTime = time.Now().Sub(start)
 	defer resp.Body.Close()
 
 	//define result
 	result.ResponseCode = resp.StatusCode
 	if resp.StatusCode != 200 {
 		//backend error? our issue?
+		result.Err = errors.New(fmt.Sprintf("Invalid backend status code: [%d]", resp.StatusCode))
+		return result
 	}
 
 	//try to get the body

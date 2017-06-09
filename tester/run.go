@@ -26,6 +26,8 @@ func (self *Tester) Check(Host string, Port int, ProxyType int) (*Result, error)
 		return self.TestSocks4(Host, Port), nil
 	case TYPE_SOCKS5:
 		return self.TestSocks4(Host, Port), nil
+	case TYPE_UNKNOWN:
+		//if result := self.TestHttp("")
 	}
 	return nil, errors.New("Unknown proxy type")
 }

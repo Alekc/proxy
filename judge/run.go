@@ -1,6 +1,7 @@
 package judge
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -8,20 +9,18 @@ import (
 	"strings"
 )
 
-var hostnameMarkers = []string{"mail",
-                               "cache",
-                               "squid",
-                               "proxy"}
+var hostnameMarkers = []string{"cache",
+	"squid",
+	"proxy"}
 
-var ipMarkers = []string{"Client-Ip",
-                         "HTTP_CLIENT_IP",
-                         "FORWARDED",
-                         "FORWARDED-FOR",
-                         "FORWARDED-FOR_IP",
-                         "X-FORWARDED",
-}
-
-var proxyMarkers = []string{
+var proxyHeaderMarkers = []string{"Client-Ip",
+	"HTTP_CLIENT_IP",
+	"FORWARDED",
+	"FORWARDED-FOR",
+	"FORWARDED-FOR-IP",
+	"X-FORWARDED",
+	"X-FORWARDED-FOR",
+	"PROXY_CONNECTION",
 	"Via",
 	"X-Proxy-Id",
 	"X-Bluecoat-Via",
@@ -38,39 +37,85 @@ func (self *Judge) Start() {
 func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	//Debug Block
 	self.debugLog(formatRequest(req))
-	
+
 	//set up markers
-	showsIp := false
+	showsRealIp := false
 	showsProxyUsage := false
-	
+
 	result := &Result{
 		Messages: make([]string, 0),
 	}
-	
-	//getRealIp
-	//realIp := self.getRealIp(req)
+
+	//getRealIpFromPost
+	realIp := self.getRealIpFromPost(req)
 	remoteIp := self.getRemoteIp(req)
-	
+
 	//check hostnames for markers
 	if msgs := self.CheckReverse(remoteIp.String()); len(msgs) > 0 {
 		showsProxyUsage = true
 		result.Messages = append(result.Messages, msgs...)
 	}
-	
-	//combine x-forwarded-for
+
+	//normalize xforwardedFor removing cloudflare and trusted gateways
 	self.normalizeXForwardedFor(req)
-	
-	self.debugLog(fmt.Sprintf("%v %v", showsIp, showsProxyUsage))
+
+	//search our ip in all headers
+	if msg := self.checkIpInHeaders(req, realIp); len(msg) > 0 {
+		showsRealIp = true
+		result.Messages = append(result.Messages, msg...)
+	}
+
+	//check headers
+	if msg := self.hasProxyHeaderMarkings(req); len(msg) > 0 {
+		showsProxyUsage = true
+		result.Messages = append(result.Messages, msg...)
+	}
+
+	//final judgement
+	if showsRealIp {
+		if showsProxyUsage {
+			result.Type = 0
+		} else {
+			result.Type = 1
+		}
+	} else {
+		if showsProxyUsage {
+			result.Type = 2
+		} else {
+			result.Type = 3
+		}
+	}
+
+	//todo: write json response to output
+	b, err := json.Marshal(&result)
+	if err != nil {
+		self.debugLog(fmt.Sprintf("Error on json.Marshal: %+v", err))
+		http.Error(w, "Error on marshaling", http.StatusInternalServerError)
+		return
+	}
+	w.Write(b)
+}
+
+func (self *Judge) checkIpInHeaders(req *http.Request, realIp string) []string {
+	msg := make([]string, 0)
+	for k, v := range req.Header {
+		if strings.Contains(strings.Join(v, ","), realIp) == false {
+			continue
+		}
+		//found our ip in the header
+		msg = append(msg, fmt.Sprintf("Found real ip in the header [%s]", k))
+	}
+	return msg
 }
 
 //Normalize X-Forwarded-For header based on cloudflare support and trusted proxies
 func (self *Judge) normalizeXForwardedFor(req *http.Request) {
 	forwardedFor := make([]string, 0)
-	
+
 	//define acceptable xforwarded for ips
 	acceptablesForwardedIps := self.TrustedGatewaysIps
 	if self.CloudFlareSupport {
-		acceptablesForwardedIps = append(acceptablesForwardedIps, )
+		acceptablesForwardedIps = append(acceptablesForwardedIps)
 	}
 	for tempIp := range strings.Split(req.Header.Get("X-Forwarded-For"), ",") {
 		for accIp := range acceptablesForwardedIps {
@@ -86,8 +131,8 @@ func (self *Judge) normalizeXForwardedFor(req *http.Request) {
 	}
 }
 
-//Gets remote ip
-func (self *Judge) getRealIp(req *http.Request) string {
+//Gets real ip
+func (self *Judge) getRealIpFromPost(req *http.Request) string {
 	realIp := ""
 	if err := req.ParseForm(); err == nil {
 		realIp = req.Form.Get("real-ip")
@@ -100,7 +145,7 @@ func (self *Judge) getRemoteIp(req *http.Request) net.IP {
 	//get Remote ip. Replace it with cloudflare value if needed
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	remoteIp := net.ParseIP(ip)
-	
+
 	//If cloudflare support is enabled, then replace remote ip with
 	//contents of CF-Connecting-Ip header
 	//Also add current remote ip to the array of ips which have to be removed from
@@ -115,19 +160,15 @@ func (self *Judge) getRemoteIp(req *http.Request) net.IP {
 	}
 	return remoteIp
 }
-func (self *Judge) hasIpMarkers(req *http.Request) bool {
-	for _, marker := range ipMarkers {
+
+func (self *Judge) hasProxyHeaderMarkings(req *http.Request) []string {
+	msg := make([]string, 0)
+	for _, marker := range proxyHeaderMarkers {
 		if req.Header.Get(marker) != "" {
-			self.debugLog(fmt.Sprintf("Found marker %s in headers", marker))
-			return true
+			msg = append(msg, fmt.Sprintf("Header [%s] is present", marker))
 		}
 	}
-	//if cloudflare support is not enable, then check x-forwarded-for and go ahead
-	if !self.CloudFlareSupport && req.Header.Get("X-Forwarded-For") == "" {
-		self.debugLog("Found marker X-Forwarded-For in headers")
-		return true
-	}
-	return false
+	return msg
 }
 
 //Checks if name contain certain markers
