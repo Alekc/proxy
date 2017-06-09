@@ -19,6 +19,9 @@ var excludedHeaders = map[string]int{
 	"Cookie":                    0,
 	"Cf-Connecting-Ip":          0,
 	"Cf-Visitor":                0,
+	"Content-Type":              0,
+	"Content-Length":            0,
+	"User-Agent":                0,
 }
 
 //author: https://medium.com/doing-things-right/pretty-printing-http-requests-in-golang-a918d5aaa000

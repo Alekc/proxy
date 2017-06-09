@@ -120,7 +120,8 @@ func (self *Judge) normalizeXForwardedFor(req *http.Request) {
 	//define acceptable xforwarded for ips
 	acceptablesForwardedIps := self.TrustedGatewaysIps
 	if self.CloudFlareSupport {
-		acceptablesForwardedIps = append(acceptablesForwardedIps)
+		ip, _, _ := net.SplitHostPort(req.RemoteAddr)
+		acceptablesForwardedIps = append(acceptablesForwardedIps, ip)
 	}
 
 	//loop through ip and remove those which are acceptable
@@ -184,7 +185,7 @@ func (self *Judge) CheckReverse(ip string) []string {
 	res := make([]string, 0)
 	names, err := net.LookupAddr(ip)
 	if err != nil {
-		self.debugLog(fmt.Sprintf("Error on resolving host for '%s' - [%+v]", ip, err))
+		//self.debugLog(fmt.Sprintf("Error on resolving host for '%s' - [%+v]", ip, err))
 		return res
 	}
 	//look for pattern
