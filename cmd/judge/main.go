@@ -16,7 +16,7 @@ var (
 func main() {
 	kingpin.Parse()
 
-	//port := flag.Int64("port",8080,"Listening port")
+	//Starting & Configuration
 	pJudge := judge.Create()
 	pJudge.ListenAddress = *listenAddress
 	pJudge.DebugEnabled = *debugEnabled
@@ -25,5 +25,6 @@ func main() {
 		pJudge.TrustedGatewaysIps = strings.Split(*trustedGw, ",")
 	}
 
+	//start
 	pJudge.Start()
 }
