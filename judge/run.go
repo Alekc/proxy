@@ -1,7 +1,6 @@
 package judge
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -92,13 +91,7 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	//todo: write json response to output
-	b, err := json.Marshal(&result)
-	if err != nil {
-		self.debugLog(fmt.Sprintf("Error on json.Marshal: %+v", err))
-		http.Error(w, "Error on marshaling", http.StatusInternalServerError)
-		return
-	}
+	b, _ := result.MarshalJSON()
 	w.Write(b)
 }
 

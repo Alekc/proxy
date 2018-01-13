@@ -2,7 +2,7 @@ package proxy
 
 import "net"
 
-//easyjson
+//easyjson:json
 type Judgement struct {
 	//Possible values
 	// 0: Non Anon: Your ip is known, proxy usage is known
