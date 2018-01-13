@@ -3,7 +3,7 @@ package judge
 const version = "0.1.0"
 
 type Judge struct {
-	Port              int64
+	ListenAddress string
 	//Set to true if you want support for judge being behind the cloudflare infrastructure
 	CloudFlareSupport bool
 	//List of trusted gateways. If your judge instance is behind some load-balancer/gateway
@@ -16,7 +16,7 @@ type Judge struct {
 //Create new Judge instance
 func Create() *Judge {
 	obj := new(Judge)
-	obj.Port = 8080
+	obj.ListenAddress = ":8080"
 	obj.CloudFlareSupport = true
 	return obj
 }

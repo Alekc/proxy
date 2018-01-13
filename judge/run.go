@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"github.com/alekc/proxy"
 )
 
 var hostnameMarkers = []string{"cache",
@@ -28,7 +29,7 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 
 func (self *Judge) Start() {
 	http.HandleFunc("/", self.analyzeRequest)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", self.Port), nil) // set listen port
+	err := http.ListenAndServe(fmt.Sprintf(self.ListenAddress), nil) // set listen port
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
@@ -42,9 +43,7 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	showsRealIp := false
 	showsProxyUsage := false
 
-	result := &Result{
-		Messages: make([]string, 0),
-	}
+	result := proxy.NewJudgeTestResult()
 
 	//if cloudflare is supported set the country
 	if self.CloudFlareSupport {
@@ -52,28 +51,28 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//getRealIpFromPost
-	realIp := self.getRealIpFromPost(req)
-	remoteIp := self.getRemoteIp(req)
+	result.RealIp = self.getRealIpFromPost(req)
+	result.RemoteIp = self.getRemoteIp(req)
 
 	//check hostnames for markers
-	if msgs := self.CheckReverse(remoteIp.String()); len(msgs) > 0 {
+	if msg := self.CheckReverse(result.RemoteIp.String()); len(msg) > 0 {
 		showsProxyUsage = true
-		result.Messages = append(result.Messages, msgs...)
+		result.AppendMessages(msg)
 	}
 
 	//normalize xforwardedFor removing cloudflare and trusted gateways
 	self.normalizeXForwardedFor(req)
 
 	//search our ip in all headers
-	if msg := self.checkIpInHeaders(req, realIp); len(msg) > 0 {
+	if msg := self.checkIpInHeaders(req, result.RealIp); len(msg) > 0 {
 		showsRealIp = true
-		result.Messages = append(result.Messages, msg...)
+		result.AppendMessages(msg)
 	}
 
 	//check headers
 	if msg := self.hasProxyHeaderMarkings(req); len(msg) > 0 {
 		showsProxyUsage = true
-		result.Messages = append(result.Messages, msg...)
+		result.AppendMessages(msg)
 	}
 
 	//final judgement
