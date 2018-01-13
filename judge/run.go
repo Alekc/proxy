@@ -43,7 +43,7 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	showsRealIp := false
 	showsProxyUsage := false
 
-	result := proxy.NewJudgeTestResult()
+	result := proxy.NewJudgement()
 
 	//if cloudflare is supported set the country
 	if self.CloudFlareSupport {

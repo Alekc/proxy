@@ -2,7 +2,8 @@ package proxy
 
 import "net"
 
-type TestResult struct {
+//easyjson
+type Judgement struct {
 	//Possible values
 	// 0: Non Anon: Your ip is known, proxy usage is known
 	// 1: Non Anon: Your ip is known, proxy usage unknown
@@ -15,13 +16,13 @@ type TestResult struct {
 	RemoteIp net.IP
 }
 
-func NewJudgeTestResult() *TestResult {
-	return &TestResult{
+func NewJudgement() *Judgement {
+	return &Judgement{
 		Messages: make([]string, 0),
 	}
 }
 
 //appends result messages
-func (tr *TestResult) AppendMessages(msg []string){
+func (tr *Judgement) AppendMessages(msg []string){
 	tr.Messages = append(tr.Messages, msg...)
 }
