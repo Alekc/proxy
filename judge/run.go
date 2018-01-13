@@ -64,9 +64,11 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	self.normalizeXForwardedFor(req)
 
 	//search our ip in all headers
-	if msg := self.checkIpInHeaders(req, result.RealIp); len(msg) > 0 {
-		showsRealIp = true
-		result.AppendMessages(msg)
+	if result.RealIp != "" {
+		if msg := self.checkIpInHeaders(req, result.RealIp); len(msg) > 0 {
+			showsRealIp = true
+			result.AppendMessages(msg)
+		}
 	}
 
 	//check headers
