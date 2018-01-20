@@ -2,11 +2,11 @@ package judge
 
 import (
 	"fmt"
+	"github.com/alekc/proxy"
 	"log"
 	"net"
 	"net/http"
 	"strings"
-	"github.com/alekc/proxy"
 )
 
 var hostnameMarkers = []string{"cache",
@@ -24,6 +24,7 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 	"Via",
 	"X-Proxy-Id",
 	"X-Bluecoat-Via",
+	"X-Iwproxy",
 }
 
 func (self *Judge) Start() {

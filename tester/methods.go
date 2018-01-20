@@ -14,7 +14,7 @@ import (
 func TestHttp(Host string, Port int) (*Result, error) {
 	return DefaultTester.TestHttp(Host, Port)
 }
-func (self *Tester) TestHttp(Host string, Port int) (*Result, error) {
+func (t *Tester) TestHttp(Host string, Port int) (*Result, error) {
 	proxyUrl, err := url.Parse(fmt.Sprintf("http://%s:%d", Host, Port))
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (self *Tester) TestHttp(Host string, Port int) (*Result, error) {
 	nProxy := http.ProxyURL(proxyUrl)
 
 	httpClient := &http.Client{Transport: &http.Transport{Proxy: nProxy}}
-	result := self.downloadWithTransport(httpClient, self.Config.HttpUri)
+	result := t.downloadWithTransport(httpClient, t.Config.HttpUri)
 
 	return result, nil
 }
@@ -65,7 +65,7 @@ func (self *Tester) downloadWithTransport(httpClient *http.Client, uri string) *
 	}
 
 	//set timeout
-	httpClient.Timeout = DefaultConfig.DownloadTimeout
+	httpClient.Timeout = self.Config.DownloadTimeout
 
 	form := url.Values{}
 	form.Add("real-ip", self.RealIp)
@@ -79,7 +79,7 @@ func (self *Tester) downloadWithTransport(httpClient *http.Client, uri string) *
 	req.Close = true
 
 	//add custom headers
-	req.Header.Add("User-Agent", DefaultConfig.UserAgent)
+	req.Header.Add("User-Agent", self.Config.UserAgent)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	//let's try to fetch data
