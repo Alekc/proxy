@@ -22,7 +22,7 @@ func (self *Tester) TestHttp(Host string, Port int) (*Result, error) {
 	nProxy := http.ProxyURL(proxyUrl)
 
 	httpClient := &http.Client{Transport: &http.Transport{Proxy: nProxy}}
-	result := self.downloadWithTransport(httpClient, DefaultConfig.HttpUri)
+	result := self.downloadWithTransport(httpClient, self.Config.HttpUri)
 
 	return result, nil
 }
@@ -50,7 +50,7 @@ func (self *Tester) testSocks(Host string, Port, socksType int) *Result {
 	transport := &http.Transport{Dial: dialSocksProxy}
 	httpClient := &http.Client{Transport: transport}
 
-	return self.downloadWithTransport(httpClient, DefaultConfig.HttpUri)
+	return self.downloadWithTransport(httpClient, self.Config.HttpUri)
 }
 
 //execute download from given source
