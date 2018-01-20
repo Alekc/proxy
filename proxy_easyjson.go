@@ -39,7 +39,7 @@ func easyjson6fc2bfdaDecodeGithubComAlekcProxy(in *jlexer.Lexer, out *Proxy) {
 		case "Ip":
 			out.Ip = string(in.String())
 		case "Port":
-			out.Port = string(in.String())
+			out.Port = int(in.Int())
 		case "Type":
 			out.Type = int(in.Int())
 		default:
@@ -74,7 +74,7 @@ func easyjson6fc2bfdaEncodeGithubComAlekcProxy(out *jwriter.Writer, in Proxy) {
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Port))
+		out.Int(int(in.Port))
 	}
 	{
 		const prefix string = ",\"Type\":"

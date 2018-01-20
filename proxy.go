@@ -5,7 +5,7 @@ import "fmt"
 //easyjson:json
 type Proxy struct {
 	Ip   string
-	Port string //todo: change to int
+	Port int
 	Type int
 }
 
