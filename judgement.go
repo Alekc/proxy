@@ -9,7 +9,7 @@ type Judgement struct {
 	// 1: Non Anon: Your ip is known, proxy usage unknown
 	// 2: Semi Anon: Your ip is unknown, proxy usage known
 	// 3: Anon: Your ip is unknown, proxy usage unknown
-	Type     int
+	AnonType int
 	Messages []string
 	Country  string
 	RealIp   string
@@ -23,6 +23,6 @@ func NewJudgement() *Judgement {
 }
 
 //appends result messages
-func (tr *Judgement) AppendMessages(msg []string){
+func (tr *Judgement) AppendMessages(msg []string) {
 	tr.Messages = append(tr.Messages, msg...)
 }

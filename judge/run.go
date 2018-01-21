@@ -80,15 +80,15 @@ func (self *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	//final judgement
 	if showsRealIp {
 		if showsProxyUsage {
-			result.Type = 0
+			result.AnonType = 0
 		} else {
-			result.Type = 1
+			result.AnonType = 1
 		}
 	} else {
 		if showsProxyUsage {
-			result.Type = 2
+			result.AnonType = 2
 		} else {
-			result.Type = 3
+			result.AnonType = 3
 		}
 	}
 

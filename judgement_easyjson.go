@@ -36,8 +36,8 @@ func easyjsonB2c4060bDecodeGithubComAlekcProxy(in *jlexer.Lexer, out *Judgement)
 			continue
 		}
 		switch key {
-		case "Type":
-			out.Type = int(in.Int())
+		case "AnonType":
+			out.AnonType = int(in.Int())
 		case "Messages":
 			if in.IsNull() {
 				in.Skip()
@@ -84,14 +84,14 @@ func easyjsonB2c4060bEncodeGithubComAlekcProxy(out *jwriter.Writer, in Judgement
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"Type\":"
+		const prefix string = ",\"AnonType\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int(int(in.Type))
+		out.Int(int(in.AnonType))
 	}
 	{
 		const prefix string = ",\"Messages\":"
