@@ -25,6 +25,7 @@ var excludedHeaders = map[string]int{
 	"Via":                       0,
 	"X-Forwarded-For":           0,
 	"X-Proxy-Id":                0,
+	"Dnt":                       0,
 }
 
 //author: https://medium.com/doing-things-right/pretty-printing-http-requests-in-golang-a918d5aaa000
