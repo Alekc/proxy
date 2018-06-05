@@ -80,7 +80,7 @@ func (self *Tester) downloadWithTransport(httpClient *http.Client, uri string) *
 
 	//add custom headers
 	req.Header.Add("User-Agent", self.Config.UserAgent)
-	req.Header.Add("Content-AnonType", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	//let's try to fetch data
 	start := time.Now()

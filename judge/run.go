@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/textproto"
 	"strings"
 )
 
@@ -28,6 +29,11 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 }
 
 func (jd *Judge) Start() {
+	//load cf ranges
+	if jd.CloudFlareSupport {
+		loadCfRanges()
+	}
+	//listen
 	http.HandleFunc("/", jd.analyzeRequest)
 	err := http.ListenAndServe(fmt.Sprintf(jd.ListenAddress), nil) // set listen port
 	if err != nil {
@@ -112,20 +118,25 @@ func (jd *Judge) checkIpInHeaders(req *http.Request, realIp string) []string {
 func (jd *Judge) normalizeXForwardedFor(req *http.Request) {
 	forwardedFor := make([]string, 0)
 
-	//define acceptable xforwarded for ips
-	acceptablesForwardedIps := jd.TrustedGatewaysIps
-	if jd.CloudFlareSupport {
-		ip, _, _ := net.SplitHostPort(req.RemoteAddr)
-		acceptablesForwardedIps = append(acceptablesForwardedIps, ip)
-	}
-
 	//loop through ip and remove those which are acceptable
-	for _, tempIp := range strings.Split(req.Header.Get("X-Forwarded-For"), ",") {
-		for _, accIp := range acceptablesForwardedIps {
-			if tempIp == accIp {
+	headerSlices := req.Header[textproto.CanonicalMIMEHeaderKey("X-Forwarded-For")]
+	for _, headerValue := range headerSlices {
+		for _, tempIp := range strings.Split(string(headerValue), ",") { //in case we have multiple entries
+			//if cloudflare support is enabled, check if ip belongs to its network
+			if jd.CloudFlareSupport && ipBelongsToCfNetwork(net.ParseIP(tempIp)) {
 				continue
 			}
-			forwardedFor = append(forwardedFor, tempIp)
+			//check if ip is in the range of trusted gateways.
+			found := false
+			for _, accIp := range jd.TrustedGatewaysIps {
+				if tempIp == accIp {
+					found = true
+					break
+				}
+			}
+			if !found {
+				forwardedFor = append(forwardedFor, tempIp)
+			}
 		}
 	}
 	//if forwardedFor is empty we can safely remove that header from our search
@@ -140,6 +151,8 @@ func (jd *Judge) getRealIpFromPost(req *http.Request) string {
 	realIp := ""
 	if err := req.ParseForm(); err == nil {
 		realIp = req.Form.Get("real-ip")
+	} else {
+		jd.debugLog(fmt.Sprintf("Error %+v", err))
 	}
 	return realIp
 }
