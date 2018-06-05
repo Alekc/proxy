@@ -6,26 +6,26 @@ import (
 	"strings"
 )
 
-var excludedHeaders = map[string]int{
-	"Connection":                0,
-	"Accept-Encoding":           0,
-	"Cf-Ipcountry":              0,
-	"Accept":                    0,
-	"Accept-Language":           0,
-	"Cf-Ray":                    0,
-	"X-Forwarded-Proto":         0,
-	"Upgrade-Insecure-Requests": 0,
-	"Cache-Control":             0,
-	"Cookie":                    0,
-	"Cf-Connecting-Ip":          0,
-	"Cf-Visitor":                0,
-	"Content-AnonType":          0,
-	"Content-Length":            0,
-	"User-Agent":                0,
-	"Via":                       0,
-	"X-Forwarded-For":           0,
-	"X-Proxy-Id":                0,
-	"Dnt":                       0,
+var excludedHeaders = map[string]interface{}{
+	"Connection":                nil,
+	"Accept-Encoding":           nil,
+	"Cf-Ipcountry":              nil,
+	"Accept":                    nil,
+	"Accept-Language":           nil,
+	"Cf-Ray":                    nil,
+	"X-Forwarded-Proto":         nil,
+	"Upgrade-Insecure-Requests": nil,
+	"Cache-Control":             nil,
+	"Cookie":                    nil,
+	"Cf-Connecting-Ip":          nil,
+	"Cf-Visitor":                nil,
+	"Content-AnonType":          nil,
+	"Content-Length":            nil,
+	"User-Agent":                nil,
+	"Via":                       nil,
+	"X-Forwarded-For":           nil,
+	"X-Proxy-Id":                nil,
+	"Dnt":                       nil,
 }
 
 //author: https://medium.com/doing-things-right/pretty-printing-http-requests-in-golang-a918d5aaa000
