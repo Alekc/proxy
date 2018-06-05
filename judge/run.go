@@ -28,7 +28,7 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 }
 
 func (j *Judge) Start() {
-	j.logger.Info("Starting prox judge v%v", version)
+	j.logger.Info("Starting proxy judge v%v", version)
 
 	//load cf ranges
 	if j.CloudFlareSupport {
@@ -38,7 +38,8 @@ func (j *Judge) Start() {
 	}
 	//listen
 	http.HandleFunc("/", j.analyzeRequest)
-	err := http.ListenAndServe(fmt.Sprintf(j.ListenAddress), nil) // set listen port
+	j.logger.Debugf("Listening on %s", j.ListenAddress)
+	err := http.ListenAndServe(j.ListenAddress, nil) // set listen port
 	if err != nil {
 		j.logger.WithError(err).Fatal("ListenAndServe fail")
 	}
