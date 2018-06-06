@@ -28,7 +28,7 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 }
 
 func (j *Judge) Start() {
-	j.logger.Info("Starting proxy judge v%v", version)
+	j.logger.Infof("Starting proxy judge v. %s", version)
 
 	//load cf ranges
 	if j.CloudFlareSupport {
