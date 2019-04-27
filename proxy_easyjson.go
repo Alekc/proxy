@@ -36,11 +36,11 @@ func easyjson6fc2bfdaDecodeGithubComAlekcProxy(in *jlexer.Lexer, out *Proxy) {
 			continue
 		}
 		switch key {
-		case "Ip":
-			out.Ip = string(in.String())
-		case "Port":
+		case "ip":
+			out.IP = string(in.String())
+		case "port":
 			out.Port = int(in.Int())
-		case "Type":
+		case "type":
 			out.Type = int(in.Int())
 		default:
 			in.SkipRecursive()
@@ -57,17 +57,17 @@ func easyjson6fc2bfdaEncodeGithubComAlekcProxy(out *jwriter.Writer, in Proxy) {
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"Ip\":"
+		const prefix string = ",\"ip\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Ip))
+		out.String(string(in.IP))
 	}
 	{
-		const prefix string = ",\"Port\":"
+		const prefix string = ",\"port\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -76,8 +76,8 @@ func easyjson6fc2bfdaEncodeGithubComAlekcProxy(out *jwriter.Writer, in Proxy) {
 		}
 		out.Int(int(in.Port))
 	}
-	{
-		const prefix string = ",\"Type\":"
+	if in.Type != 0 {
+		const prefix string = ",\"type\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])

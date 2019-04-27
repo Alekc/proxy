@@ -9,18 +9,20 @@ import (
 
 var proxyRegex = regexp.MustCompile(`^((?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])):(\d{1,5})$`)
 
+//Proxy represent an proxy object containing ip, port, and the proxy type
 //easyjson:json
 type Proxy struct {
-	Ip   string
-	Port int
-	Type int
+	IP   string `json:"ip"`
+	Port int    `json:"port"`
+	Type int    `json:"type,omitempty"`
 }
 
+//ToString converts proxy to ip:port format
 func (v *Proxy) ToString() string {
-	return fmt.Sprintf("%s:%d", v.Ip, v.Port)
+	return fmt.Sprintf("%s:%d", v.IP, v.Port)
 }
 
-// Converts ipv4 string (xxx.xx.xxx.xxx:xxxxx) to Proxy object
+//FromIpv4String converts ipv4 string (xxx.xx.xxx.xxx:xxxxx) to a Proxy object
 func FromIpv4String(proxyString string) (*Proxy, error) {
 	if proxyString == "" {
 		return nil, errors.New("input string is empty")
@@ -38,7 +40,7 @@ func FromIpv4String(proxyString string) (*Proxy, error) {
 		return nil, errors.New("invalid port")
 	}
 	px := &Proxy{
-		Ip:   matchResult[0][1],
+		IP:   matchResult[0][1],
 		Port: port,
 		Type: 0,
 	}

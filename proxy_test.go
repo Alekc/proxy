@@ -26,7 +26,7 @@ func TestFromIpv4String(t *testing.T) {
 
 func TestProxy_ToString(t *testing.T) {
 	px := &Proxy{
-		Ip:   "1.2.3.4",
+		IP:   "1.2.3.4",
 		Port: 1234,
 	}
 	assert.Equal(t, "1.2.3.4:1234", px.ToString(), "result should be 1.2.3.4:1234")
