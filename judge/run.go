@@ -49,7 +49,7 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	j.logRequest(req)
 
 	//set up markers
-	showsRealIp := false
+	showsRealIP := false
 	showsProxyUsage := false
 
 	result := NewJudgement()
@@ -59,8 +59,8 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 		result.Country = req.Header.Get("Cf-IpCountry")
 	}
 
-	//getRealIpFromPost
-	result.RealIP = j.getRealIpFromPost(req)
+	//getRealIPFromPost
+	result.RealIP = j.getRealIPFromPost(req)
 	result.RemoteIP = j.getRemoteIp(req)
 
 	//check reverse hostname of proxy ip for markers
@@ -74,8 +74,8 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 
 	//search our ip in all headers
 	if result.RealIP != "" {
-		if msg := j.checkIpInHeaders(req, result.RealIP); len(msg) > 0 {
-			showsRealIp = true
+		if msg := j.checkIPInHeaders(req, result.RealIP); len(msg) > 0 {
+			showsRealIP = true
 			result.AppendMessages(msg)
 		}
 	}
@@ -87,7 +87,7 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//final judgement
-	if showsRealIp {
+	if showsRealIP {
 		if showsProxyUsage {
 			j.logger.
 				WithField("judgement", "shows real ip, shows proxy usage").
@@ -114,16 +114,16 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	}
 
 	encodedBody, _ := result.MarshalJSON()
-	w.Write(encodedBody)
+	_, _ = w.Write(encodedBody)
 	j.logger.
 		WithField("body", string(encodedBody)).
 		Info("http response")
 }
 
-func (j *Judge) checkIpInHeaders(req *http.Request, realIp string) []string {
+func (j *Judge) checkIPInHeaders(req *http.Request, realIP string) []string {
 	msg := make([]string, 0)
 	for k, v := range req.Header {
-		if strings.Contains(strings.Join(v, ","), realIp) == false {
+		if !strings.Contains(strings.Join(v, ","), realIP) {
 			continue
 		}
 		//found our ip in the header
@@ -143,21 +143,21 @@ func (j *Judge) normalizeXForwardedFor(req *http.Request) {
 	//loop through ip and remove those which are acceptable
 	headerSlices := req.Header[textproto.CanonicalMIMEHeaderKey("X-Forwarded-For")]
 	for _, headerValue := range headerSlices {
-		for _, tempIp := range strings.Split(string(headerValue), ",") { //in case we have multiple entries
+		for _, tempIP := range strings.Split(headerValue, ",") { //in case we have multiple entries
 			//if cloudflare support is enabled, check if ip belongs to its network
-			if j.CloudFlareSupport && ipBelongsToCfNetwork(net.ParseIP(tempIp)) {
+			if j.CloudFlareSupport && ipBelongsToCfNetwork(net.ParseIP(tempIP)) {
 				continue
 			}
 			//check if ip is in the range of trusted gateways.
 			found := false
-			for _, trustedIp := range j.TrustedGatewaysIps {
-				if tempIp == trustedIp {
+			for _, trustedIP := range j.TrustedGatewaysIps {
+				if tempIP == trustedIP {
 					found = true
 					break
 				}
 			}
 			if !found {
-				forwardedFor = append(forwardedFor, tempIp)
+				forwardedFor = append(forwardedFor, tempIP)
 			}
 		}
 	}
@@ -169,14 +169,14 @@ func (j *Judge) normalizeXForwardedFor(req *http.Request) {
 }
 
 //Gets real ip
-func (j *Judge) getRealIpFromPost(req *http.Request) string {
-	realIp := ""
+func (j *Judge) getRealIPFromPost(req *http.Request) string {
+	realIP := ""
 	if err := req.ParseForm(); err == nil {
-		realIp = req.Form.Get("real-ip")
+		realIP = req.Form.Get("real-ip")
 	} else {
 		j.logger.WithError(err).Warn("Couldn't get real ip")
 	}
-	return realIp
+	return realIP
 }
 
 //

@@ -46,7 +46,7 @@ func (j *Judge) logRequest(r *http.Request) {
 
 	// If this is a POST, add post data
 	if r.Method == "POST" {
-		r.ParseForm()
+		_ = r.ParseForm()
 		j.logger.
 			WithField("form_contents", r.Form.Encode()).
 			Debug("Form present")
