@@ -1,8 +1,10 @@
 package judge
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/alekc/proxy"
+	"github.com/sirupsen/logrus"
 )
 
 const version = "0.1.0"
@@ -33,4 +35,9 @@ func Create() *Judge {
 
 func (j *Judge) SetLogger(log *logrus.Logger) {
 	j.logger = log
+}
+func NewJudgement() *proxy.Judgement {
+	return &proxy.Judgement{
+		Messages: make([]string, 0),
+	}
 }

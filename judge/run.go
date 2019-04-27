@@ -2,7 +2,6 @@ package judge
 
 import (
 	"fmt"
-	"github.com/alekc/proxy"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -53,7 +52,7 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	showsRealIp := false
 	showsProxyUsage := false
 
-	result := proxy.NewJudgement()
+	result := NewJudgement()
 
 	//if cloudflare is supported get the country from header
 	if j.CloudFlareSupport {
@@ -61,11 +60,11 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//getRealIpFromPost
-	result.RealIp = j.getRealIpFromPost(req)
-	result.RemoteIp = j.getRemoteIp(req)
+	result.RealIP = j.getRealIpFromPost(req)
+	result.RemoteIP = j.getRemoteIp(req)
 
 	//check reverse hostname of proxy ip for markers
-	if msg := j.CheckReverse(result.RemoteIp.String()); len(msg) > 0 {
+	if msg := j.CheckReverse(result.RemoteIP.String()); len(msg) > 0 {
 		showsProxyUsage = true
 		result.AppendMessages(msg)
 	}
@@ -74,8 +73,8 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	j.normalizeXForwardedFor(req)
 
 	//search our ip in all headers
-	if result.RealIp != "" {
-		if msg := j.checkIpInHeaders(req, result.RealIp); len(msg) > 0 {
+	if result.RealIP != "" {
+		if msg := j.checkIpInHeaders(req, result.RealIP); len(msg) > 0 {
 			showsRealIp = true
 			result.AppendMessages(msg)
 		}

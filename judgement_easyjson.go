@@ -36,9 +36,9 @@ func easyjsonB2c4060bDecodeGithubComAlekcProxy(in *jlexer.Lexer, out *Judgement)
 			continue
 		}
 		switch key {
-		case "AnonType":
+		case "anon_type":
 			out.AnonType = int(in.Int())
-		case "Messages":
+		case "messages":
 			if in.IsNull() {
 				in.Skip()
 				out.Messages = nil
@@ -61,13 +61,13 @@ func easyjsonB2c4060bDecodeGithubComAlekcProxy(in *jlexer.Lexer, out *Judgement)
 				}
 				in.Delim(']')
 			}
-		case "Country":
+		case "country":
 			out.Country = string(in.String())
-		case "RealIp":
-			out.RealIp = string(in.String())
-		case "RemoteIp":
+		case "real_ip":
+			out.RealIP = string(in.String())
+		case "remote_ip":
 			if data := in.UnsafeBytes(); in.Ok() {
-				in.AddError((out.RemoteIp).UnmarshalText(data))
+				in.AddError((out.RemoteIP).UnmarshalText(data))
 			}
 		default:
 			in.SkipRecursive()
@@ -84,7 +84,7 @@ func easyjsonB2c4060bEncodeGithubComAlekcProxy(out *jwriter.Writer, in Judgement
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"AnonType\":"
+		const prefix string = ",\"anon_type\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -94,7 +94,7 @@ func easyjsonB2c4060bEncodeGithubComAlekcProxy(out *jwriter.Writer, in Judgement
 		out.Int(int(in.AnonType))
 	}
 	{
-		const prefix string = ",\"Messages\":"
+		const prefix string = ",\"messages\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -115,7 +115,7 @@ func easyjsonB2c4060bEncodeGithubComAlekcProxy(out *jwriter.Writer, in Judgement
 		}
 	}
 	{
-		const prefix string = ",\"Country\":"
+		const prefix string = ",\"country\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -125,24 +125,24 @@ func easyjsonB2c4060bEncodeGithubComAlekcProxy(out *jwriter.Writer, in Judgement
 		out.String(string(in.Country))
 	}
 	{
-		const prefix string = ",\"RealIp\":"
+		const prefix string = ",\"real_ip\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.RealIp))
+		out.String(string(in.RealIP))
 	}
 	{
-		const prefix string = ",\"RemoteIp\":"
+		const prefix string = ",\"remote_ip\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
 		} else {
 			out.RawString(prefix)
 		}
-		out.RawText((in.RemoteIp).MarshalText())
+		out.RawText((in.RemoteIP).MarshalText())
 	}
 	out.RawByte('}')
 }
