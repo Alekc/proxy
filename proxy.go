@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-var proxyRegex = regexp.MustCompile(`((?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])):(\d{1,5})`)
+var proxyRegex = regexp.MustCompile(`^((?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])):(\d{1,5})$`)
 
 //easyjson:json
 type Proxy struct {
@@ -28,18 +28,19 @@ func FromIpv4String(proxyString string) (*Proxy, error) {
 
 	//extract ip and port
 	matchResult := proxyRegex.FindAllStringSubmatch(proxyString, -1)
-	if len(matchResult) != 1 && len(matchResult[0]) != 3 {
+	if matchResult == nil || (len(matchResult) != 1 && len(matchResult[0]) != 3) {
 		return nil, errors.New("this is not a valid ipv4 address")
 	}
 
 	//convert port to appropriate type
-	port, err := strconv.Atoi(matchResult[0][2])
-	if err != nil {
-		return nil, err
+	port, _ := strconv.Atoi(matchResult[0][2])
+	if !(port > 0 && port <= 65535) {
+		return nil, errors.New("invalid port")
 	}
 	px := &Proxy{
 		Ip:   matchResult[0][1],
 		Port: port,
+		Type: 0,
 	}
 	return px, nil
 }

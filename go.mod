@@ -9,5 +9,6 @@ require (
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 	github.com/pkg/errors v0.8.1
 	github.com/sirupsen/logrus v1.4.1
+	github.com/stretchr/testify v1.3.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
