@@ -1,6 +1,7 @@
 package judge
 
 import (
+	"net"
 	"os"
 
 	"github.com/alekc/proxy"
@@ -9,6 +10,7 @@ import (
 
 const version = "0.1.0"
 
+//Judge listens for incoming judge request
 type Judge struct {
 	ListenAddress string
 	//Set to true if you want support for judge being behind the cloudflare infrastructure
@@ -17,6 +19,7 @@ type Judge struct {
 	//which adds it's ip to x-forwarded-for header you might want to add it here.
 	TrustedGatewaysIps []string
 	logger             *logrus.Logger
+	cfIPRanges         []*net.IPNet
 }
 
 //Create new Judge instance
@@ -33,10 +36,12 @@ func Create() *Judge {
 	return obj
 }
 
+//SetLogger sets new logger instance
 func (j *Judge) SetLogger(log *logrus.Logger) {
 	j.logger = log
 }
-func NewJudgement() *proxy.Judgement {
+
+func newJudgement() *proxy.Judgement {
 	return &proxy.Judgement{
 		Messages: make([]string, 0),
 	}

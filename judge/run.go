@@ -1,6 +1,7 @@
 package judge
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -26,14 +27,15 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 	"X-Iwproxy",
 }
 
+//Start binds and starts judgements
 func (j *Judge) Start() {
 	j.logger.Infof("Starting proxy judge v. %s", version)
 
 	//load cf ranges
 	if j.CloudFlareSupport {
 		j.logger.Debug("Loading cf ip ranges")
-		loadCfRanges()
-		j.logger.Debug("Cf ranges loaded")
+		j.loadCfRanges(context.TODO())
+		j.logger.Info("Cf ranges loaded")
 	}
 	//listen
 	http.HandleFunc("/", j.analyzeRequest)
@@ -52,7 +54,7 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	showsRealIP := false
 	showsProxyUsage := false
 
-	result := NewJudgement()
+	result := newJudgement()
 
 	//if cloudflare is supported get the country from header
 	if j.CloudFlareSupport {
@@ -61,7 +63,7 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 
 	//getRealIPFromPost
 	result.RealIP = j.getRealIPFromPost(req)
-	result.RemoteIP = j.getRemoteIp(req)
+	result.RemoteIP = j.getRemoteIP(req)
 
 	//check reverse hostname of proxy ip for markers
 	if msg := j.CheckReverse(result.RemoteIP.String()); len(msg) > 0 {
@@ -145,7 +147,7 @@ func (j *Judge) normalizeXForwardedFor(req *http.Request) {
 	for _, headerValue := range headerSlices {
 		for _, tempIP := range strings.Split(headerValue, ",") { //in case we have multiple entries
 			//if cloudflare support is enabled, check if ip belongs to its network
-			if j.CloudFlareSupport && ipBelongsToCfNetwork(net.ParseIP(tempIP)) {
+			if j.CloudFlareSupport && ipBelongsToCfNetwork(j.cfIPRanges, net.ParseIP(tempIP)) {
 				continue
 			}
 			//check if ip is in the range of trusted gateways.
@@ -180,10 +182,10 @@ func (j *Judge) getRealIPFromPost(req *http.Request) string {
 }
 
 //
-func (j *Judge) getRemoteIp(req *http.Request) net.IP {
+func (j *Judge) getRemoteIP(req *http.Request) net.IP {
 	//get Remote ip. Replace it with cloudflare value if needed
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
-	remoteIp := net.ParseIP(ip)
+	remoteIP := net.ParseIP(ip)
 
 	//If cloudflare support is enabled, then replace remote ip with
 	//contents of CF-Connecting-Ip header
@@ -193,11 +195,11 @@ func (j *Judge) getRemoteIp(req *http.Request) net.IP {
 		if ip = req.Header.Get("CF-Connecting-IP"); ip != "" {
 			temp := net.ParseIP(ip)
 			if temp != nil {
-				remoteIp = temp
+				remoteIP = temp
 			}
 		}
 	}
-	return remoteIp
+	return remoteIP
 }
 
 //checks if headers have certain markers, i.e. FORWARDED-FOR
@@ -216,7 +218,8 @@ func (j *Judge) hasProxyHeaderMarkers(req *http.Request) []string {
 	return msg
 }
 
-//Checks if name contain certain markers
+//CheckReverse attempts to reverse ip address, and look for certain markers.
+//for example proxy1.company.com
 func (j *Judge) CheckReverse(ip string) []string {
 	res := make([]string, 0)
 	names, err := net.LookupAddr(ip)
