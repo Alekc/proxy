@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/alekc/proxy"
 	"strings"
 
-	"github.com/alekc/proxy/judge"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -18,7 +18,7 @@ func main() {
 	kingpin.Parse()
 
 	//Starting & Configuration
-	pJudge := judge.Create()
+	pJudge := proxy.Create()
 	pJudge.ListenAddress = *listenAddress
 	//pJudge.DebugEnabled = *debugEnabled
 	pJudge.CloudFlareSupport = *cfSupport
