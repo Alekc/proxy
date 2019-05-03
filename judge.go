@@ -1,13 +1,19 @@
-package judge
+package proxy
 
 import (
 	"context"
 	"fmt"
+	"github.com/alekc/proxy/cloudflare"
+	"github.com/sirupsen/logrus"
+	"go.opencensus.io/trace"
 	"net"
 	"net/http"
 	"net/textproto"
+	"os"
 	"strings"
 )
+
+const version = "0.1.0"
 
 var hostnameMarkers = []string{"cache",
 	"squid",
@@ -25,6 +31,43 @@ var proxyHeaderMarkers = []string{"Client-Ip",
 	"X-Proxy-Id",
 	"X-Bluecoat-Via",
 	"X-Iwproxy",
+}
+
+//Judge listens for incoming judge request
+type Judge struct {
+	ListenAddress string
+	//Set to true if you want support for judge being behind the cloudflare infrastructure
+	CloudFlareSupport bool
+	//List of trusted gateways. If your judge instance is behind some load-balancer/gateway
+	//which adds it's ip to x-forwarded-for header you might want to add it here.
+	TrustedGatewaysIps []string
+	logger             *logrus.Logger
+	cfIPRanges         []*net.IPNet
+}
+
+//Create new Judge instance
+func Create() *Judge {
+	obj := new(Judge)
+	obj.ListenAddress = ":8080"
+	obj.CloudFlareSupport = true
+
+	//default logger (only errors are visible)
+	obj.logger = logrus.New()
+	obj.logger.Out = os.Stdout
+	obj.logger.SetLevel(logrus.ErrorLevel)
+
+	return obj
+}
+
+//SetLogger sets new logger instance
+func (j *Judge) SetLogger(log *logrus.Logger) {
+	j.logger = log
+}
+
+func newJudgement() *Judgement {
+	return &Judgement{
+		Messages: make([]string, 0),
+	}
 }
 
 //Start binds and starts judgements
@@ -147,7 +190,7 @@ func (j *Judge) normalizeXForwardedFor(req *http.Request) {
 	for _, headerValue := range headerSlices {
 		for _, tempIP := range strings.Split(headerValue, ",") { //in case we have multiple entries
 			//if cloudflare support is enabled, check if ip belongs to its network
-			if j.CloudFlareSupport && ipBelongsToCfNetwork(j.cfIPRanges, net.ParseIP(tempIP)) {
+			if j.CloudFlareSupport && cloudflare.IpBelongsToCfNetwork(j.cfIPRanges, net.ParseIP(tempIP)) {
 				continue
 			}
 			//check if ip is in the range of trusted gateways.
@@ -241,4 +284,104 @@ func (j *Judge) CheckReverse(ip string) []string {
 		}
 	}
 	return res
+}
+
+var excludedHeaders = map[string]interface{}{
+	"Connection":                nil,
+	"Accept-Encoding":           nil,
+	"Cf-Ipcountry":              nil,
+	"Accept":                    nil,
+	"Accept-Language":           nil,
+	"Cf-Ray":                    nil,
+	"X-Forwarded-Proto":         nil,
+	"Upgrade-Insecure-Requests": nil,
+	"Cache-Control":             nil,
+	"Cookie":                    nil,
+	"Cf-Connecting-Ip":          nil,
+	"Cf-Visitor":                nil,
+	"Content-Type":              nil,
+	"Content-Length":            nil,
+	"User-Agent":                nil,
+	"Via":                       nil,
+	"X-Forwarded-For":           nil,
+	"X-Proxy-Id":                nil,
+	"Dnt":                       nil,
+}
+
+// author: https://medium.com/doing-things-right/pretty-printing-http-requests-in-golang-a918d5aaa000
+// logRequest generates ascii representation of a request
+func (j *Judge) logRequest(r *http.Request) {
+	// Loop through headers
+	for name, headers := range r.Header {
+		//remove header from debug if it's known.
+		if _, ok := excludedHeaders[name]; ok {
+			continue
+		}
+		for _, h := range headers {
+			j.logger.
+				WithField("header_key", name).
+				WithField("header_value", h).
+				Warn("unknown header")
+			//headerStrings = append(headerStrings, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		_ = r.ParseForm()
+		j.logger.
+			WithField("form_contents", r.Form.Encode()).
+			Debug("Form present")
+	}
+}
+
+//loadCfRanges loads ranges for cloudflare
+func (j *Judge) loadCfRanges(ctx context.Context) {
+	_, span := trace.StartSpan(ctx, "judge.loadCfRanges")
+	defer span.End()
+
+	//get values from live site
+	ranges, err := cloudflare.DownloadLiveRanges(ctx, j.logger)
+	switch {
+	case err != nil:
+	case ranges == "":
+		j.logger.Debug("loading default ranges")
+		ranges = `
+173.245.48.0/20
+103.21.244.0/22
+103.22.200.0/22
+103.31.4.0/22 
+141.101.64.0/18
+108.162.192.0/18
+190.93.240.0/20
+188.114.96.0/20
+197.234.240.0/22
+198.41.128.0/17
+162.158.0.0/15
+104.16.0.0/12
+172.64.0.0/13
+131.0.72.0/22
+2400:cb00::/32
+2606:4700::/32
+2803:f800::/32
+2405:b500::/32
+2405:8100::/32
+2a06:98c0::/29
+2c0f:f248::/32`
+	default:
+		j.logger.Debug("downloaded cf ranges")
+	}
+
+	//split result and add it to our ranges
+	ipRanges := strings.Split(ranges, "\n")
+	for _, cidr := range ipRanges {
+		_, ipNet, err := net.ParseCIDR(cidr)
+		//skip on error
+		if err != nil {
+			j.logger.WithError(err).Error("error on cidr parsing")
+			continue
+		}
+		j.logger.WithField("cidr", cidr).Debug("added cidr to cf ranges")
+		j.cfIPRanges = append(j.cfIPRanges, ipNet)
+	}
 }
