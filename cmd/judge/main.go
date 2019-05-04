@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/alekc/proxy"
 	"strings"
+
+	"github.com/alekc/proxy"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -27,5 +28,5 @@ func main() {
 	}
 
 	//start
-	pJudge.Start()
+	pJudge.Run()
 }

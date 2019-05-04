@@ -3,14 +3,15 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"github.com/alekc/proxy/cloudflare"
-	"github.com/sirupsen/logrus"
-	"go.opencensus.io/trace"
 	"net"
 	"net/http"
 	"net/textproto"
 	"os"
 	"strings"
+
+	"github.com/alekc/proxy/cloudflare"
+	"github.com/sirupsen/logrus"
+	"go.opencensus.io/trace"
 )
 
 const version = "0.1.0"
@@ -64,14 +65,15 @@ func (j *Judge) SetLogger(log *logrus.Logger) {
 	j.logger = log
 }
 
+//newJudgement creates new Judgement instance
 func newJudgement() *Judgement {
 	return &Judgement{
 		Messages: make([]string, 0),
 	}
 }
 
-//Start binds and starts judgements
-func (j *Judge) Start() {
+//Run the judge
+func (j *Judge) Run() {
 	j.logger.Infof("Starting proxy judge v. %s", version)
 
 	//load cf ranges
@@ -89,6 +91,7 @@ func (j *Judge) Start() {
 	}
 }
 
+//analyzeRequest analyze proxy state based
 func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 	//Debug Block
 	j.logRequest(req)
@@ -99,7 +102,8 @@ func (j *Judge) analyzeRequest(w http.ResponseWriter, req *http.Request) {
 
 	result := newJudgement()
 
-	//if cloudflare is supported get the country from header
+	//if cloudflare is supported, get the country from header
+	//todo enable support for geoip without cloudflare
 	if j.CloudFlareSupport {
 		result.Country = req.Header.Get("Cf-IpCountry")
 	}
@@ -213,7 +217,7 @@ func (j *Judge) normalizeXForwardedFor(req *http.Request) {
 	}
 }
 
-//Gets real ip
+//getRealIPFromPost returns real ip if returned from the request
 func (j *Judge) getRealIPFromPost(req *http.Request) string {
 	realIP := ""
 	if err := req.ParseForm(); err == nil {
@@ -224,7 +228,8 @@ func (j *Judge) getRealIPFromPost(req *http.Request) string {
 	return realIP
 }
 
-//
+//getRemoteIP returns connecting ip from request.
+//if cloudflare support is enabled, then the CF-Connecting-IP value is used
 func (j *Judge) getRemoteIP(req *http.Request) net.IP {
 	//get Remote ip. Replace it with cloudflare value if needed
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
@@ -308,12 +313,11 @@ var excludedHeaders = map[string]interface{}{
 	"Dnt":                       nil,
 }
 
-// author: https://medium.com/doing-things-right/pretty-printing-http-requests-in-golang-a918d5aaa000
 // logRequest generates ascii representation of a request
 func (j *Judge) logRequest(r *http.Request) {
 	// Loop through headers
 	for name, headers := range r.Header {
-		//remove header from debug if it's known.
+		//Do not debug known headers
 		if _, ok := excludedHeaders[name]; ok {
 			continue
 		}
@@ -322,16 +326,7 @@ func (j *Judge) logRequest(r *http.Request) {
 				WithField("header_key", name).
 				WithField("header_value", h).
 				Warn("unknown header")
-			//headerStrings = append(headerStrings, fmt.Sprintf("%v: %v", name, h))
 		}
-	}
-
-	// If this is a POST, add post data
-	if r.Method == "POST" {
-		_ = r.ParseForm()
-		j.logger.
-			WithField("form_contents", r.Form.Encode()).
-			Debug("Form present")
 	}
 }
 
